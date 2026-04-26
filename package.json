@@ -2,6 +2,10 @@
   "name": "mcschematic-ts",
   "version": "1.0.0",
   "description": "TypeScript port of mcschematic",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/builderpepc/mcschematic-ts"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
