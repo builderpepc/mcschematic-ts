@@ -4,8 +4,12 @@
   "description": "TypeScript port of mcschematic",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
+    "prepublishOnly": "npm test && npm run build",
     "test": "jest",
     "test:watch": "jest --watch"
   },
