@@ -13,9 +13,12 @@ export interface NbtString { type: 'string';    value: string }
 export interface NbtByteArray { type: 'byteArray'; value: Int8Array }
 export interface NbtIntArray  { type: 'intArray';  value: Int32Array }
 export interface NbtLongArray { type: 'longArray'; value: Array<[number, number]> }
+/** An NBT list whose elements all share the same type. */
 export interface NbtList<T extends NbtTag = NbtTag> { type: 'list'; value: { type: string; value: T[] } }
+/** An NBT compound (key → tag map). */
 export interface NbtCompound  { type: 'compound'; value: Record<string, NbtTag> }
 
+/** Union of all supported NBT tag types. */
 export type NbtTag =
   | NbtByte | NbtShort | NbtInt | NbtLong
   | NbtFloat | NbtDouble | NbtString
@@ -181,12 +184,19 @@ function parseNumericToken(token: string): NbtTag {
   return { type: 'string', value: token };
 }
 
+/** Splits a JS number into a 64-bit long represented as `[high32, low32]`. */
 function longFromNumber(n: number): [number, number] {
   const high = Math.floor(n / 0x100000000);
   const low = n >>> 0;
   return [high, low];
 }
 
+/**
+ * Parses an SNBT string into an {@link NbtTag} tree.
+ *
+ * @param snbt - A Minecraft SNBT string, e.g. `{Count:1b,id:"minecraft:stone"}`.
+ * @returns The parsed NBT tag.
+ */
 export function parseSnbt(snbt: string): NbtTag {
   return new SnbtParser(snbt).parse();
 }
@@ -195,6 +205,12 @@ export function parseSnbt(snbt: string): NbtTag {
 // Serializer (NbtTag → SNBT string)
 // ---------------------------------------------------------------------------
 
+/**
+ * Serializes an {@link NbtTag} back into an SNBT string.
+ *
+ * @param tag - The NBT tag to serialize.
+ * @returns A Minecraft-compatible SNBT representation.
+ */
 export function serializeTag(tag: NbtTag): string {
   switch (tag.type) {
     case 'byte':   return `${tag.value}b`;
@@ -220,6 +236,7 @@ export function serializeTag(tag: NbtTag): string {
   }
 }
 
+/** Converts a `[high32, low32]` long back to a JS number. */
 function longToNumber(v: [number, number]): number {
   return v[0] * 0x100000000 + (v[1] >>> 0);
 }

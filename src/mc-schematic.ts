@@ -6,9 +6,33 @@ import { MCStructure, Position, Bounds } from './mc-structure';
 import { Version } from './version';
 import { parseSnbt, serializeTag, NbtCompound, NbtTag } from './nbt-utils';
 
+/**
+ * Public API facade for creating, loading, and saving WorldEdit `.schem` files.
+ *
+ * Wraps an {@link MCStructure} and exposes block-manipulation helpers alongside
+ * serialisation/deserialisation logic for the Sponge Schematic v2 format
+ * (gzip-compressed NBT with a `Schematic` root tag).
+ *
+ * Typical usage patterns:
+ * - `new MCSchematic()` — start with an empty schematic.
+ * - `new MCSchematic(filePath)` — load an existing `.schem` file from disk.
+ * - `new MCSchematic(structure)` — wrap a pre-built {@link MCStructure}.
+ */
 export class MCSchematic {
   private _structure: MCStructure;
 
+  /**
+   * Creates an MCSchematic instance.
+   *
+   * Three overloads are supported:
+   * - **No argument** — constructs an empty schematic backed by a blank {@link MCStructure}.
+   * - **`string` argument** — treats the value as a file-system path and attempts to load the
+   *   `.schem` file at that location. If the file does not exist or does not end with `.schem`
+   *   the instance falls back to an empty schematic silently.
+   * - **{@link MCStructure} argument** — wraps the provided structure directly without copying it.
+   *
+   * @param arg - Optional file path (`string`) or an existing {@link MCStructure} to wrap.
+   */
   constructor(arg?: string | MCStructure) {
     if (arg === undefined || arg === null) {
       this._structure = new MCStructure();
@@ -27,6 +51,16 @@ export class MCSchematic {
     this._structure = arg;
   }
 
+  /**
+   * Deserialises a `.schem` file from disk into this instance's backing structure.
+   *
+   * Reads the gzip-compressed NBT file, extracts the block palette, decodes the
+   * `BlockData` byte array (either raw single-byte IDs or varint-encoded IDs depending
+   * on palette size), and reconstructs block-entity data. Air is always normalised to
+   * palette ID 0 regardless of the original file ordering.
+   *
+   * @param filePath - Absolute or relative path to a valid `.schem` file.
+   */
   private _initFromFile(filePath: string): void {
     const compressed = fs.readFileSync(filePath);
     const raw = zlib.gunzipSync(compressed);
@@ -179,6 +213,24 @@ export class MCSchematic {
     this._structure._blockEntities = structureBlockEntities;
   }
 
+  /**
+   * Serialises the schematic to a gzip-compressed `.schem` file on disk.
+   *
+   * The output uses Sponge Schematic format v2 with a `Schematic` NBT root tag.
+   * Block states are encoded as a `BlockData` byte array whose encoding depends on
+   * the palette size (see {@link _getEncodedBlockStates}). Block entities are written
+   * as an NBT list of compounds, each containing an `Id` string and a `Pos` int-array.
+   *
+   * @param outputFolderPath - Directory in which to write the file. Pass `''` to write
+   *   into the current working directory.
+   * @param schemName - File name without extension. The `.schem` suffix is appended
+   *   automatically (e.g. `'my_build'` → `my_build.schem`).
+   * @param version - Minecraft data version integer (see {@link Version}) written to the
+   *   `DataVersion` NBT tag, used by WorldEdit to interpret block states correctly.
+   * @param fastSaving - When `true`, uses a fixed-width varint encoding for palettes
+   *   larger than 128 entries, which avoids per-block key look-ups at the cost of writing
+   *   padding bytes. Defaults to `false` (minimal-width varint, smallest output).
+   */
   save(
     outputFolderPath: string,
     schemName: string,
@@ -268,40 +320,110 @@ export class MCSchematic {
     fs.writeFileSync(outPath, compressed);
   }
 
+  /** Returns the underlying {@link MCStructure} that backs this schematic. */
   getStructure(): MCStructure { return this._structure; }
 
+  /**
+   * Places a block at the given world position.
+   *
+   * @param position - `[x, y, z]` coordinates.
+   * @param blockData - Block-state string, e.g. `'minecraft:stone'` or
+   *   `'minecraft:chest[facing=north]{Items:[...]}'`.
+   */
   setBlock(position: Position, blockData: string): void {
     this._structure.setBlock(position, blockData);
   }
 
+  /**
+   * Returns the block-state string (without NBT) at the given position.
+   *
+   * @param position - `[x, y, z]` coordinates.
+   * @returns The block-state string, e.g. `'minecraft:chest[facing=north]'`,
+   *   or `'minecraft:air'` if nothing has been placed there.
+   */
   getBlockStateAt(position: Position): string {
     return this._structure.getBlockStateAt(position);
   }
 
+  /**
+   * Returns the full block-data string (block state + optional NBT) at the given position.
+   *
+   * @param position - `[x, y, z]` coordinates.
+   * @returns The full block-data string including any appended SNBT compound, e.g.
+   *   `'minecraft:chest[facing=north]{Items:[...]}'`.
+   */
   getBlockDataAt(position: Position): string {
     return this._structure.getBlockDataAt(position);
   }
 
+  /**
+   * Merges another {@link MCSchematic} into this one, placing it at `placePosition`.
+   *
+   * Blocks from `incomingSchematic` overwrite existing blocks where they overlap.
+   *
+   * @param incomingSchematic - The schematic whose blocks will be copied in.
+   * @param placePosition - World-space `[x, y, z]` origin at which to paste the incoming schematic.
+   * @returns `this`, enabling method chaining.
+   */
   placeSchematic(incomingSchematic: MCSchematic, placePosition: Position): MCSchematic {
     this._structure.placeStructure(incomingSchematic.getStructure(), placePosition);
     return this;
   }
 
+  /**
+   * Merges a raw {@link MCStructure} into this schematic at `placePosition`.
+   *
+   * @param incomingStructure - The structure whose blocks will be copied in.
+   * @param placePosition - World-space `[x, y, z]` origin at which to paste the structure.
+   * @returns `this`, enabling method chaining.
+   */
   placeStructure(incomingStructure: MCStructure, placePosition: Position): MCSchematic {
     this._structure.placeStructure(incomingStructure, placePosition);
     return this;
   }
 
+  /**
+   * Creates a deep copy of this schematic.
+   *
+   * @returns A new {@link MCSchematic} instance with an independent copy of the
+   *   underlying structure.
+   */
   makeCopy(): MCSchematic {
     return new MCSchematic(this._structure.makeCopy());
   }
 
+  /**
+   * Extracts a rectangular sub-region of this schematic.
+   *
+   * @param corner1 - One corner of the bounding box (inclusive).
+   * @param corner2 - The opposite corner of the bounding box (inclusive).
+   * @param reCenter - When `true`, shifts all block coordinates so the sub-region
+   *   starts at the origin. Defaults to `false`.
+   * @returns A new {@link MCSchematic} containing only the blocks within the specified region.
+   */
   getSubSchematic(corner1: Position, corner2: Position, reCenter = false): MCSchematic {
     return new MCSchematic(this._structure.getSubStructure(corner1, corner2, reCenter));
   }
 
   // --- Private ---
 
+  /**
+   * Converts an internal block-entity data string into the prismarine-nbt compound
+   * format required by the Sponge Schematic `BlockEntities` list.
+   *
+   * The `blockEntityString` has the form `<blockStateId>[stateProps]{nbtData}`, e.g.
+   * `minecraft:chest[facing=north]{Items:[...]}`. This method:
+   * 1. Strips the block-state prefix to extract the `Id` value.
+   * 2. Parses the trailing SNBT compound and converts every tag from the internal
+   *    {@link NbtTag} representation to prismarine-nbt's {@link nbt.NBT} format via
+   *    {@link nbtTagToPrismarine}.
+   * 3. Injects a `Pos` int-array tag containing the relative position and an `Id`
+   *    string tag containing the block's namespaced identifier.
+   *
+   * @param blockEntityPosition - Schematic-relative `[x, y, z]` position of the block entity.
+   * @param blockEntityString - Internal block-data string for the block entity.
+   * @returns A prismarine-nbt compound record ready to be written into the NBT list.
+   */
   private _blockEntityStringToSchemCompound(
     blockEntityPosition: Position,
     blockEntityString: string,
@@ -328,6 +450,31 @@ export class MCSchematic {
     return out;
   }
 
+  /**
+   * Encodes the schematic's block-state grid into the `BlockData` byte array.
+   *
+   * The encoding strategy depends on the palette size:
+   *
+   * - **≤ 128 entries** — each block occupies exactly 1 byte. Palette IDs fit in 7 bits
+   *   so no continuation bit is needed and the array length equals the schematic volume.
+   *
+   * - **> 128 entries, `fastSaving = false`** — each block is encoded as a minimal-width
+   *   unsigned varint (variable number of bytes). The array is iterated in `y → z → x`
+   *   order and the varint bytes are appended sequentially.
+   *
+   * - **> 128 entries, `fastSaving = true`** — uses a fixed-width varint whose byte
+   *   count is determined by the number of bits required for `paletteLen - 1`. This
+   *   allows direct index arithmetic (`bytePos = ry*ySpan + rz*zSpan + rx*xSpan`) and
+   *   avoids iterating over all positions for air blocks, at the cost of slightly larger
+   *   output when many IDs are small.
+   *
+   * @param paletteLen - Number of entries in the clean (compacted) block palette.
+   * @param schemDims - `[width, height, length]` dimensions of the schematic bounding box.
+   * @param schemOffset - `[x, y, z]` world-space origin of the bounding box, used to
+   *   convert absolute block-state keys back to relative indices.
+   * @param fastSaving - Selects fixed-width varint encoding when `true`.
+   * @returns A signed byte array (`Int8Array`) suitable for the NBT `byteArray` tag.
+   */
   private _getEncodedBlockStates(
     paletteLen: number,
     schemDims: Position,
@@ -413,6 +560,18 @@ export class MCSchematic {
 // Varint helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * Encodes a non-negative integer as a minimal-width unsigned varint.
+ *
+ * Each output byte stores 7 bits of the value in its low bits. The most-significant
+ * bit (0x80) is set on every byte except the last, signalling that more bytes follow.
+ * The least-significant group of 7 bits is emitted first (little-endian bit order).
+ *
+ * Examples: `0` → `[0x00]`, `128` → `[0x80, 0x01]`, `300` → `[0xAC, 0x02]`.
+ *
+ * @param n - The non-negative integer to encode.
+ * @returns An array of bytes representing the varint.
+ */
 function encodeVarint(n: number): number[] {
   const out: number[] = [];
   while (true) {
@@ -422,6 +581,18 @@ function encodeVarint(n: number): number[] {
   }
 }
 
+/**
+ * Encodes a non-negative integer as a fixed-width unsigned varint.
+ *
+ * Uses the same 7-bits-per-byte, LSB-first scheme as {@link encodeVarint}, but always
+ * emits exactly `length` bytes regardless of the value's magnitude. The continuation
+ * bit (0x80) is set on all bytes except the final one, even if the remaining bits are
+ * zero. This allows O(1) random access into a packed block-state array.
+ *
+ * @param n - The non-negative integer to encode.
+ * @param length - The exact number of bytes to emit.
+ * @returns An array of exactly `length` bytes representing the fixed-width varint.
+ */
 function encodeVarintFixedLen(n: number, length: number): number[] {
   const out: number[] = [];
   for (let i = 0; i < length; i++) {
@@ -436,6 +607,19 @@ function encodeVarintFixedLen(n: number, length: number): number[] {
 // Tag conversion helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * Converts a prismarine-nbt {@link nbt.NBT} tag into the internal {@link NbtTag}
+ * representation used by this library's SNBT utilities.
+ *
+ * Handles all standard NBT tag types: `byte`, `short`, `int`, `long`, `float`,
+ * `double`, `string`, `byteArray`, `intArray`, `compound`, and `list`. Unknown types
+ * are coerced to a `string` tag as a fallback. Typed arrays (`byteArray`, `intArray`)
+ * are converted from plain `number[]` to `Int8Array` / `Int32Array` respectively.
+ * `compound` and `list` children are converted recursively.
+ *
+ * @param tag - A prismarine-nbt tag object with `{ type, value }` shape.
+ * @returns The equivalent {@link NbtTag} for use with {@link serializeTag} and friends.
+ */
 function prismarineTagToNbtTag(tag: nbt.NBT): NbtTag {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const t = tag as any;
@@ -473,6 +657,21 @@ function prismarineTagToNbtTag(tag: nbt.NBT): NbtTag {
   }
 }
 
+/**
+ * Converts an internal {@link NbtTag} into a prismarine-nbt {@link nbt.NBT} tag.
+ *
+ * This is the inverse of {@link prismarineTagToNbtTag}. It is used when building
+ * the NBT tree that is handed to `prismarine-nbt`'s `writeUncompressed` for
+ * serialisation. Key differences from the inverse direction:
+ * - `byteArray` / `intArray` typed arrays are spread into plain `number[]` because
+ *   prismarine-nbt expects raw arrays.
+ * - `list` elements are unwrapped to their `.value` only (prismarine-nbt's list format
+ *   stores unwrapped element values rather than full tag objects in `value.value`).
+ * - Unknown types fall back to a `string` tag.
+ *
+ * @param tag - An internal {@link NbtTag} produced by {@link parseSnbt} or related utils.
+ * @returns The equivalent prismarine-nbt {@link nbt.NBT} tag.
+ */
 function nbtTagToPrismarine(tag: NbtTag): nbt.NBT {
   switch (tag.type) {
     case 'byte':   return { type: 'byte',   value: tag.value } as unknown as nbt.NBT;
