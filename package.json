@@ -1,0 +1,23 @@
+{
+  "name": "mcschematic-ts",
+  "version": "1.0.0",
+  "description": "TypeScript port of mcschematic",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "dependencies": {
+    "prismarine-nbt": "2.8.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^25.6.0",
+    "jest": "^29.7.0",
+    "ts-jest": "29.4.9",
+    "ts-node": "^10.9.2",
+    "typescript": "6.0.3"
+  }
+}
