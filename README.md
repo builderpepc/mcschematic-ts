@@ -93,6 +93,18 @@ Every `MCSchematic` wraps an `MCStructure`, which stores the actual block data a
 - `makeCopy()` — deep copy
 - `getBounds()` — return the axis-aligned bounding box
 
+#### Testing
+
+The test suite (`tests/compare.test.ts`) is a set of parity tests that verify the TypeScript implementation produces byte-for-byte identical `.schem` output to the original Python library. Each test builds a schematic using both implementations, then decompresses and parses the NBT of each output and compares them field-by-field: palette contents, block state at every position, dimensions, WE offsets, and block entity counts.
+
+The fixtures (`tests/fixtures/*.schem`) are pre-generated reference files produced by the Python library and committed to the repo. To regenerate them, run `python tests/generate_fixtures.py` with `mcschematic` available on the Python path.
+
+```
+npm test
+```
+
+Tests cover: single blocks, blocks with properties, blocks with NBT data, cuboid fill/hollow/outlines, multiple block entities, rotation, flip on all three planes, translate with negative coordinates, `placeSchematic`, `getSubSchematic` with recentering, `makeCopy` independence, large palettes (>128 entries, forcing varint encoding), multiple `BlockDataDB` container types, and different `Version` values.
+
 #### License
 
 Apache 2.0
