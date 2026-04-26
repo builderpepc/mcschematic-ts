@@ -13,11 +13,28 @@ type RotationType =
 
 type RotationEntry = [endswithId: string, rotType: RotationType, isNotEndswithId: string[]];
 
+/**
+ * Static utility class that provides methods for rotating and flipping Minecraft block state
+ * strings. Given a block state such as `minecraft:oak_stairs[facing=north]`, it can produce
+ * the correctly transformed state after a horizontal rotation or a horizontal flip, handling
+ * all the different property conventions used by the game (facing, axis, rotation, shape, and
+ * per-side boolean/none properties).
+ */
 export class MCBlockStateManipulator {
+  /**
+   * Ordered list of the four horizontal facing directions used as a rotation cycle
+   * (north → east → south → west → north).
+   */
   private static readonly _horizontalFacingPropertyRotationList: string[] = [
     'north', 'east', 'south', 'west',
   ];
 
+  /**
+   * Lookup table that maps block ID suffixes (or full namespaced IDs) to their
+   * {@link RotationType}, along with an optional exclusion list of suffixes that should
+   * not be matched even if the primary suffix matches. Entries are checked in order and
+   * the first match wins.
+   */
   static readonly rotatableBlockIdSuffixToHorizontalRotationType: RotationEntry[] = [
     ['_stairs', 'horizontal', []],
     [':repeater', 'horizontal', []],
@@ -105,6 +122,15 @@ export class MCBlockStateManipulator {
     ['_rail', 'rail', []],
   ];
 
+  /**
+   * Parses a block state properties string of the form `[key=val,key2=val2]` into a
+   * plain key-value record. An empty string returns an empty record. Surrounding brackets
+   * and any spaces are stripped before splitting on commas.
+   *
+   * @param blockStateProperties - The raw properties substring, e.g. `"[facing=north,half=top]"`,
+   *   or an empty string when the block state has no properties.
+   * @returns A record mapping each property name to its string value.
+   */
   static parseBlockStateProperties(blockStateProperties: string): Record<string, string> {
     if (blockStateProperties === '') return {};
 
@@ -118,11 +144,27 @@ export class MCBlockStateManipulator {
     return map;
   }
 
+  /**
+   * Serialises a property map back into a block state properties string, e.g.
+   * `{ facing: 'north', half: 'top' }` → `"[facing=north,half=top]"`.
+   * Returns an empty string when the map has no entries.
+   *
+   * @param propertyMap - Key-value pairs representing the block state properties.
+   * @returns The formatted properties string, or `""` if there are no properties.
+   */
   static propertyMapToBlockStatePropertiesString(propertyMap: Record<string, string>): string {
     if (Object.keys(propertyMap).length === 0) return '';
     return '[' + Object.entries(propertyMap).map(([k, v]) => `${k}=${v}`).join(',') + ']';
   }
 
+  /**
+   * Copies any keys from `defaultPropertyMap` that are absent in `propertyMap` into
+   * `propertyMap`, mutating it in place. Used to ensure required properties have a
+   * sensible default before transformation logic runs.
+   *
+   * @param propertyMap - The property map to fill in.
+   * @param defaultPropertyMap - Source of default values for missing keys.
+   */
   static fillAbsentPropertiesInPropertyMap(
     propertyMap: Record<string, string>,
     defaultPropertyMap: Record<string, string>,
@@ -134,6 +176,15 @@ export class MCBlockStateManipulator {
     }
   }
 
+  /**
+   * Returns the facing direction that results from rotating `horizontalFacingProperty`
+   * clockwise by `ninetyDegreeTurnCount` × 90 degrees on the horizontal plane.
+   *
+   * @param horizontalFacingProperty - One of `"north"`, `"east"`, `"south"`, or `"west"`.
+   * @param ninetyDegreeTurnCount - Number of 90-degree clockwise turns; may be negative or
+   *   exceed 3 (values are wrapped with modulo 4).
+   * @returns The rotated facing direction string.
+   */
   static getRotatedHorizontalFacingProperty(
     horizontalFacingProperty: string,
     ninetyDegreeTurnCount: number,
@@ -146,6 +197,15 @@ export class MCBlockStateManipulator {
     return rotations[idx];
   }
 
+  /**
+   * Returns the facing direction that results from mirroring `horizontalFacingProperty`
+   * across the given plane. Directions not affected by the chosen plane are returned
+   * unchanged.
+   *
+   * @param horizontalFacingProperty - One of `"north"`, `"east"`, `"south"`, or `"west"`.
+   * @param flippingPlane - `"xy"` to mirror north/south, or `"yz"` to mirror east/west.
+   * @returns The flipped facing direction string.
+   */
   static getHorizontallyFlippedFacingProperty(
     horizontalFacingProperty: string,
     flippingPlane: string,
@@ -161,6 +221,14 @@ export class MCBlockStateManipulator {
     return horizontalFacingProperty;
   }
 
+  /**
+   * Mirrors an ordered list of four per-side values (indexed north, east, south, west)
+   * across the given plane, swapping the appropriate pair of opposing sides.
+   *
+   * @param sideValueList - Array of four values in [north, east, south, west] order.
+   * @param flippingPlane - `"xy"` swaps north and south; `"yz"` swaps east and west.
+   * @returns A new array with the relevant pair of values swapped.
+   */
   static getHorizontallyFlippedSideValueList<T>(
     sideValueList: T[],
     flippingPlane: string,
@@ -175,6 +243,14 @@ export class MCBlockStateManipulator {
     return flipped;
   }
 
+  /**
+   * Mutates `propertyMap` in place so that its `facing` property reflects a horizontal
+   * rotation, first filling any absent properties from `defaultPropertyMap`.
+   *
+   * @param propertyMap - The property map to rotate.
+   * @param defaultPropertyMap - Default values used to fill absent properties.
+   * @param ninetyDegreeTurnCount - Number of 90-degree clockwise turns to apply.
+   */
   static rotateHorizontalFacingBlockStatesPropertyMap(
     propertyMap: Record<string, string>,
     defaultPropertyMap: Record<string, string>,
@@ -187,6 +263,14 @@ export class MCBlockStateManipulator {
     );
   }
 
+  /**
+   * Looks up the {@link RotationType} for the given block ID by walking
+   * {@link rotatableBlockIdSuffixToHorizontalRotationType} and returning the first match.
+   * Returns `"Not found"` if no entry matches.
+   *
+   * @param blockStateBlockId - The namespaced block ID, e.g. `"minecraft:oak_stairs"`.
+   * @returns The matching {@link RotationType}, or `"Not found"`.
+   */
   private static _findRotationType(blockStateBlockId: string): RotationType {
     for (const [endswithId, rotType, isNotEndswithId] of MCBlockStateManipulator.rotatableBlockIdSuffixToHorizontalRotationType) {
       if (!blockStateBlockId.endsWith(endswithId)) continue;
@@ -196,6 +280,23 @@ export class MCBlockStateManipulator {
     return 'Not found';
   }
 
+  /**
+   * Returns the block state string that results from rotating `blockState` clockwise by
+   * `ninetyDegreeTurnCount` × 90 degrees on the horizontal (XZ) plane.
+   *
+   * The method handles all supported rotation types — directional facing values, axis
+   * properties, per-side properties (redstone wire, walls, glass panes, fences, vines,
+   * mushroom blocks), sign/banner rotation integers, and rail shape strings. Block states
+   * whose block ID is not found in the lookup table are returned unchanged.
+   *
+   * @param blockState - Full block state string, e.g. `"minecraft:oak_stairs[facing=north,half=bottom,shape=straight]"`.
+   *   A bare block ID without properties is also accepted. The `minecraft:` namespace is
+   *   inferred automatically if absent.
+   * @param ninetyDegreeTurnCount - Number of 90-degree clockwise turns to apply; may be any
+   *   integer (values are normalised with modulo 4 internally).
+   * @returns The transformed block state string, or the original string if the block type
+   *   is not recognised as rotatable.
+   */
   static getHorizontallyRotatedBlockState(
     blockState: string,
     ninetyDegreeTurnCount: number,
@@ -309,6 +410,24 @@ export class MCBlockStateManipulator {
     return blockStateBlockId + MCBlockStateManipulator.propertyMapToBlockStatePropertiesString(propertyMap);
   }
 
+  /**
+   * Returns the block state string that results from mirroring `blockState` across the
+   * given horizontal plane.
+   *
+   * Handles the same set of rotation types as {@link getHorizontallyRotatedBlockState},
+   * plus two flip-specific corrections: door hinge sides are swapped, and stair corner
+   * shapes (`outer_left` / `inner_right`, etc.) have their left/right suffix inverted.
+   * Axis-aligned blocks (logs, pillars, etc.) are unaffected by a horizontal flip.
+   * Block states whose block ID is not found in the lookup table are returned unchanged.
+   *
+   * @param blockState - Full block state string, e.g. `"minecraft:oak_door[facing=east,hinge=left]"`.
+   *   A bare block ID without properties is also accepted. The `minecraft:` namespace is
+   *   inferred automatically if absent.
+   * @param flippingPlane - The plane to mirror across: `"xy"` mirrors the north/south axis,
+   *   `"yz"` mirrors the east/west axis.
+   * @returns The transformed block state string, or the original string if the block type
+   *   is not recognised as flippable.
+   */
   static getHorizontallyFlippedBlockState(
     blockState: string,
     flippingPlane: string,

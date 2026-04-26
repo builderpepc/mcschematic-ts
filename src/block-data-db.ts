@@ -1,5 +1,18 @@
+/**
+ * A static database of pre-built blockData strings for every vanilla Minecraft container.
+ *
+ * Each inner class corresponds to one container type and exposes 16 pre-computed blockData
+ * strings — one per comparator signal strength (0–15). The data is primarily intended for
+ * computational redstone builds where a container must output a precise signal strength.
+ *
+ * Usage:
+ * - Call `BlockDataDB.<CONTAINER>.fromSS(ss)` to retrieve the blockData string dynamically.
+ * - Or access the flat shortcut fields (e.g. `BlockDataDB.SS_CHEST7`) for a compile-time constant.
+ */
 export class BlockDataDB {
+  /** blockData strings for a Barrel (27-slot inventory). */
   static readonly BARREL = class {
+    /** Pre-computed blockData strings indexed by signal strength (index 0 = SS 0, index 15 = SS 15). */
     static readonly _barrelSS: string[] = [
       `minecraft:barrel[open=false,facing=up]{CustomName:'{"italic":false,"text":"0"}'}`,
       `minecraft:barrel[open=false,facing=up]{CustomName:'{"italic":false,"text":"1"}',Items:[{Count:1b,Slot:0b,id:"minecraft:redstone"}]}`,
@@ -19,12 +32,19 @@ export class BlockDataDB {
       `minecraft:barrel[open=false,facing=up]{CustomName:'{"italic":false,"text":"15"}',Items:[{Count:64b,Slot:0b,id:"minecraft:redstone"},{Count:64b,Slot:1b,id:"minecraft:redstone"},{Count:64b,Slot:2b,id:"minecraft:redstone"},{Count:64b,Slot:3b,id:"minecraft:redstone"},{Count:64b,Slot:4b,id:"minecraft:redstone"},{Count:64b,Slot:5b,id:"minecraft:redstone"},{Count:64b,Slot:6b,id:"minecraft:redstone"},{Count:64b,Slot:7b,id:"minecraft:redstone"},{Count:64b,Slot:8b,id:"minecraft:redstone"},{Count:64b,Slot:9b,id:"minecraft:redstone"},{Count:64b,Slot:10b,id:"minecraft:redstone"},{Count:64b,Slot:11b,id:"minecraft:redstone"},{Count:64b,Slot:12b,id:"minecraft:redstone"},{Count:64b,Slot:13b,id:"minecraft:redstone"},{Count:64b,Slot:14b,id:"minecraft:redstone"},{Count:64b,Slot:15b,id:"minecraft:redstone"},{Count:64b,Slot:16b,id:"minecraft:redstone"},{Count:64b,Slot:17b,id:"minecraft:redstone"},{Count:64b,Slot:18b,id:"minecraft:redstone"},{Count:64b,Slot:19b,id:"minecraft:redstone"},{Count:64b,Slot:20b,id:"minecraft:redstone"},{Count:64b,Slot:21b,id:"minecraft:redstone"},{Count:64b,Slot:22b,id:"minecraft:redstone"},{Count:64b,Slot:23b,id:"minecraft:redstone"},{Count:64b,Slot:24b,id:"minecraft:redstone"},{Count:64b,Slot:25b,id:"minecraft:redstone"},{Count:64b,Slot:26b,id:"minecraft:redstone"},{Count:0b,Slot:27b,id:"minecraft:redstone"}]}`,
     ];
 
+    /**
+     * Returns the blockData string for a Barrel that outputs the given comparator signal strength.
+     * @param ss - Signal strength (integer 0–15).
+     * @returns The blockData string for the Barrel at that signal strength.
+     */
     static fromSS(ss: number): string {
       return BlockDataDB.BARREL._barrelSS[ss];
     }
   };
 
+  /** blockData strings for a Hopper (5-slot inventory). */
   static readonly HOPPER = class {
+    /** Pre-computed blockData strings indexed by signal strength (index 0 = SS 0, index 15 = SS 15). */
     static readonly _hopperSS: string[] = [
       `minecraft:hopper{CustomName:'{"italic":false,"text":"0"}'}`,
       `minecraft:hopper{CustomName:'{"italic":false,"text":"1"}',Items:[{Count:1b,Slot:0b,id:"minecraft:redstone"}]}`,
@@ -44,12 +64,19 @@ export class BlockDataDB {
       `minecraft:hopper{CustomName:'{"italic":false,"text":"15"}',Items:[{Count:64b,Slot:0b,id:"minecraft:redstone"},{Count:64b,Slot:1b,id:"minecraft:redstone"},{Count:64b,Slot:2b,id:"minecraft:redstone"},{Count:64b,Slot:3b,id:"minecraft:redstone"},{Count:64b,Slot:4b,id:"minecraft:redstone"},{Count:0b,Slot:5b,id:"minecraft:redstone"}]}`,
     ];
 
+    /**
+     * Returns the blockData string for a Hopper that outputs the given comparator signal strength.
+     * @param ss - Signal strength (integer 0–15).
+     * @returns The blockData string for the Hopper at that signal strength.
+     */
     static fromSS(ss: number): string {
       return BlockDataDB.HOPPER._hopperSS[ss];
     }
   };
 
+  /** blockData strings for a Furnace (3-slot inventory: input, fuel, output). */
   static readonly FURNACE = class {
+    /** Pre-computed blockData strings indexed by signal strength (index 0 = SS 0, index 15 = SS 15). */
     static readonly _furnaceSS: string[] = [
       `minecraft:furnace{CustomName:'{"italic":false,"text":"0"}'}`,
       `minecraft:furnace{CustomName:'{"italic":false,"text":"1"}',Items:[{Count:1b,Slot:0b,id:"minecraft:redstone"}]}`,
@@ -69,12 +96,17 @@ export class BlockDataDB {
       `minecraft:furnace{CustomName:'{"italic":false,"text":"15"}',Items:[{Count:64b,Slot:0b,id:"minecraft:redstone"},{Count:64b,Slot:1b,id:"minecraft:redstone"},{Count:64b,Slot:2b,id:"minecraft:redstone"},{Count:0b,Slot:3b,id:"minecraft:redstone"}]}`,
     ];
 
+    /**
+     * Returns the blockData string for a Furnace that outputs the given comparator signal strength.
+     * @param ss - Signal strength (integer 0–15).
+     * @returns The blockData string for the Furnace at that signal strength.
+     */
     static fromSS(ss: number): string {
       return BlockDataDB.FURNACE._furnaceSS[ss];
     }
   };
 
-  // Static shortcut fields
+  /** Flat shortcut fields for Barrel signal strengths 0–15. */
   static readonly SS_BARREL0  = BlockDataDB.BARREL._barrelSS[0];
   static readonly SS_BARREL1  = BlockDataDB.BARREL._barrelSS[1];
   static readonly SS_BARREL2  = BlockDataDB.BARREL._barrelSS[2];
@@ -92,6 +124,7 @@ export class BlockDataDB {
   static readonly SS_BARREL14 = BlockDataDB.BARREL._barrelSS[14];
   static readonly SS_BARREL15 = BlockDataDB.BARREL._barrelSS[15];
 
+  /** Flat shortcut fields for Hopper signal strengths 0–15. */
   static readonly SS_HOPPER0  = BlockDataDB.HOPPER._hopperSS[0];
   static readonly SS_HOPPER1  = BlockDataDB.HOPPER._hopperSS[1];
   static readonly SS_HOPPER2  = BlockDataDB.HOPPER._hopperSS[2];
@@ -109,6 +142,7 @@ export class BlockDataDB {
   static readonly SS_HOPPER14 = BlockDataDB.HOPPER._hopperSS[14];
   static readonly SS_HOPPER15 = BlockDataDB.HOPPER._hopperSS[15];
 
+  /** Flat shortcut fields for Furnace signal strengths 0–15. */
   static readonly SS_FURNACE0  = BlockDataDB.FURNACE._furnaceSS[0];
   static readonly SS_FURNACE1  = BlockDataDB.FURNACE._furnaceSS[1];
   static readonly SS_FURNACE2  = BlockDataDB.FURNACE._furnaceSS[2];
@@ -126,7 +160,9 @@ export class BlockDataDB {
   static readonly SS_FURNACE14 = BlockDataDB.FURNACE._furnaceSS[14];
   static readonly SS_FURNACE15 = BlockDataDB.FURNACE._furnaceSS[15];
 
+  /** blockData strings for a Dispenser (9-slot inventory). */
   static readonly DISPENSER = class {
+    /** Pre-computed blockData strings indexed by signal strength (index 0 = SS 0, index 15 = SS 15). */
     static readonly _dispenserSS: string[] = [
       `minecraft:dispenser{CustomName:'{"italic":false,"text":"0"}'}`,
       `minecraft:dispenser{CustomName:'{"italic":false,"text":"1"}',Items:[{Count:1b,Slot:0b,id:"minecraft:redstone"}]}`,
@@ -145,9 +181,15 @@ export class BlockDataDB {
       `minecraft:dispenser{CustomName:'{"italic":false,"text":"14"}',Items:[{Count:64b,Slot:0b,id:"minecraft:redstone"},{Count:64b,Slot:1b,id:"minecraft:redstone"},{Count:64b,Slot:2b,id:"minecraft:redstone"},{Count:64b,Slot:3b,id:"minecraft:redstone"},{Count:64b,Slot:4b,id:"minecraft:redstone"},{Count:64b,Slot:5b,id:"minecraft:redstone"},{Count:64b,Slot:6b,id:"minecraft:redstone"},{Count:64b,Slot:7b,id:"minecraft:redstone"},{Count:23b,Slot:8b,id:"minecraft:redstone"}]}`,
       `minecraft:dispenser{CustomName:'{"italic":false,"text":"15"}',Items:[{Count:64b,Slot:0b,id:"minecraft:redstone"},{Count:64b,Slot:1b,id:"minecraft:redstone"},{Count:64b,Slot:2b,id:"minecraft:redstone"},{Count:64b,Slot:3b,id:"minecraft:redstone"},{Count:64b,Slot:4b,id:"minecraft:redstone"},{Count:64b,Slot:5b,id:"minecraft:redstone"},{Count:64b,Slot:6b,id:"minecraft:redstone"},{Count:64b,Slot:7b,id:"minecraft:redstone"},{Count:64b,Slot:8b,id:"minecraft:redstone"},{Count:0b,Slot:9b,id:"minecraft:redstone"}]}`,
     ];
+    /**
+     * Returns the blockData string for a Dispenser that outputs the given comparator signal strength.
+     * @param ss - Signal strength (integer 0–15).
+     * @returns The blockData string for the Dispenser at that signal strength.
+     */
     static fromSS(ss: number): string { return BlockDataDB.DISPENSER._dispenserSS[ss]; }
   };
 
+  /** Flat shortcut fields for Dispenser signal strengths 0–15. */
   static readonly SS_DISPENSER0  = BlockDataDB.DISPENSER._dispenserSS[0];
   static readonly SS_DISPENSER1  = BlockDataDB.DISPENSER._dispenserSS[1];
   static readonly SS_DISPENSER2  = BlockDataDB.DISPENSER._dispenserSS[2];
@@ -165,7 +207,9 @@ export class BlockDataDB {
   static readonly SS_DISPENSER14 = BlockDataDB.DISPENSER._dispenserSS[14];
   static readonly SS_DISPENSER15 = BlockDataDB.DISPENSER._dispenserSS[15];
 
+  /** blockData strings for a Dropper (9-slot inventory). */
   static readonly DROPPER = class {
+    /** Pre-computed blockData strings indexed by signal strength (index 0 = SS 0, index 15 = SS 15). */
     static readonly _dropperSS: string[] = [
       `minecraft:dropper{CustomName:'{"italic":false,"text":"0"}'}`,
       `minecraft:dropper{CustomName:'{"italic":false,"text":"1"}',Items:[{Count:1b,Slot:0b,id:"minecraft:redstone"}]}`,
@@ -184,9 +228,15 @@ export class BlockDataDB {
       `minecraft:dropper{CustomName:'{"italic":false,"text":"14"}',Items:[{Count:64b,Slot:0b,id:"minecraft:redstone"},{Count:64b,Slot:1b,id:"minecraft:redstone"},{Count:64b,Slot:2b,id:"minecraft:redstone"},{Count:64b,Slot:3b,id:"minecraft:redstone"},{Count:64b,Slot:4b,id:"minecraft:redstone"},{Count:64b,Slot:5b,id:"minecraft:redstone"},{Count:64b,Slot:6b,id:"minecraft:redstone"},{Count:64b,Slot:7b,id:"minecraft:redstone"},{Count:23b,Slot:8b,id:"minecraft:redstone"}]}`,
       `minecraft:dropper{CustomName:'{"italic":false,"text":"15"}',Items:[{Count:64b,Slot:0b,id:"minecraft:redstone"},{Count:64b,Slot:1b,id:"minecraft:redstone"},{Count:64b,Slot:2b,id:"minecraft:redstone"},{Count:64b,Slot:3b,id:"minecraft:redstone"},{Count:64b,Slot:4b,id:"minecraft:redstone"},{Count:64b,Slot:5b,id:"minecraft:redstone"},{Count:64b,Slot:6b,id:"minecraft:redstone"},{Count:64b,Slot:7b,id:"minecraft:redstone"},{Count:64b,Slot:8b,id:"minecraft:redstone"},{Count:0b,Slot:9b,id:"minecraft:redstone"}]}`,
     ];
+    /**
+     * Returns the blockData string for a Dropper that outputs the given comparator signal strength.
+     * @param ss - Signal strength (integer 0–15).
+     * @returns The blockData string for the Dropper at that signal strength.
+     */
     static fromSS(ss: number): string { return BlockDataDB.DROPPER._dropperSS[ss]; }
   };
 
+  /** Flat shortcut fields for Dropper signal strengths 0–15. */
   static readonly SS_DROPPER0  = BlockDataDB.DROPPER._dropperSS[0];
   static readonly SS_DROPPER1  = BlockDataDB.DROPPER._dropperSS[1];
   static readonly SS_DROPPER2  = BlockDataDB.DROPPER._dropperSS[2];
@@ -204,7 +254,9 @@ export class BlockDataDB {
   static readonly SS_DROPPER14 = BlockDataDB.DROPPER._dropperSS[14];
   static readonly SS_DROPPER15 = BlockDataDB.DROPPER._dropperSS[15];
 
+  /** blockData strings for a Trapped Chest (27-slot inventory). */
   static readonly TRAPPED_CHEST = class {
+    /** Pre-computed blockData strings indexed by signal strength (index 0 = SS 0, index 15 = SS 15). */
     static readonly _trapped_chestSS: string[] = [
       `minecraft:trapped_chest{CustomName:'{"italic":false,"text":"0"}'}`,
       `minecraft:trapped_chest{CustomName:'{"italic":false,"text":"1"}',Items:[{Count:1b,Slot:0b,id:"minecraft:redstone"}]}`,
@@ -223,9 +275,15 @@ export class BlockDataDB {
       `minecraft:trapped_chest{CustomName:'{"italic":false,"text":"14"}',Items:[{Count:64b,Slot:0b,id:"minecraft:redstone"},{Count:64b,Slot:1b,id:"minecraft:redstone"},{Count:64b,Slot:2b,id:"minecraft:redstone"},{Count:64b,Slot:3b,id:"minecraft:redstone"},{Count:64b,Slot:4b,id:"minecraft:redstone"},{Count:64b,Slot:5b,id:"minecraft:redstone"},{Count:64b,Slot:6b,id:"minecraft:redstone"},{Count:64b,Slot:7b,id:"minecraft:redstone"},{Count:64b,Slot:8b,id:"minecraft:redstone"},{Count:64b,Slot:9b,id:"minecraft:redstone"},{Count:64b,Slot:10b,id:"minecraft:redstone"},{Count:64b,Slot:11b,id:"minecraft:redstone"},{Count:64b,Slot:12b,id:"minecraft:redstone"},{Count:64b,Slot:13b,id:"minecraft:redstone"},{Count:64b,Slot:14b,id:"minecraft:redstone"},{Count:64b,Slot:15b,id:"minecraft:redstone"},{Count:64b,Slot:16b,id:"minecraft:redstone"},{Count:64b,Slot:17b,id:"minecraft:redstone"},{Count:64b,Slot:18b,id:"minecraft:redstone"},{Count:64b,Slot:19b,id:"minecraft:redstone"},{Count:64b,Slot:20b,id:"minecraft:redstone"},{Count:64b,Slot:21b,id:"minecraft:redstone"},{Count:64b,Slot:22b,id:"minecraft:redstone"},{Count:64b,Slot:23b,id:"minecraft:redstone"},{Count:64b,Slot:24b,id:"minecraft:redstone"},{Count:5b,Slot:25b,id:"minecraft:redstone"}]}`,
       `minecraft:trapped_chest{CustomName:'{"italic":false,"text":"15"}',Items:[{Count:64b,Slot:0b,id:"minecraft:redstone"},{Count:64b,Slot:1b,id:"minecraft:redstone"},{Count:64b,Slot:2b,id:"minecraft:redstone"},{Count:64b,Slot:3b,id:"minecraft:redstone"},{Count:64b,Slot:4b,id:"minecraft:redstone"},{Count:64b,Slot:5b,id:"minecraft:redstone"},{Count:64b,Slot:6b,id:"minecraft:redstone"},{Count:64b,Slot:7b,id:"minecraft:redstone"},{Count:64b,Slot:8b,id:"minecraft:redstone"},{Count:64b,Slot:9b,id:"minecraft:redstone"},{Count:64b,Slot:10b,id:"minecraft:redstone"},{Count:64b,Slot:11b,id:"minecraft:redstone"},{Count:64b,Slot:12b,id:"minecraft:redstone"},{Count:64b,Slot:13b,id:"minecraft:redstone"},{Count:64b,Slot:14b,id:"minecraft:redstone"},{Count:64b,Slot:15b,id:"minecraft:redstone"},{Count:64b,Slot:16b,id:"minecraft:redstone"},{Count:64b,Slot:17b,id:"minecraft:redstone"},{Count:64b,Slot:18b,id:"minecraft:redstone"},{Count:64b,Slot:19b,id:"minecraft:redstone"},{Count:64b,Slot:20b,id:"minecraft:redstone"},{Count:64b,Slot:21b,id:"minecraft:redstone"},{Count:64b,Slot:22b,id:"minecraft:redstone"},{Count:64b,Slot:23b,id:"minecraft:redstone"},{Count:64b,Slot:24b,id:"minecraft:redstone"},{Count:64b,Slot:25b,id:"minecraft:redstone"},{Count:64b,Slot:26b,id:"minecraft:redstone"},{Count:0b,Slot:27b,id:"minecraft:redstone"}]}`,
     ];
+    /**
+     * Returns the blockData string for a Trapped Chest that outputs the given comparator signal strength.
+     * @param ss - Signal strength (integer 0–15).
+     * @returns The blockData string for the Trapped Chest at that signal strength.
+     */
     static fromSS(ss: number): string { return BlockDataDB.TRAPPED_CHEST._trapped_chestSS[ss]; }
   };
 
+  /** Flat shortcut fields for Trapped Chest signal strengths 0–15. */
   static readonly SS_TRAPPED_CHEST0  = BlockDataDB.TRAPPED_CHEST._trapped_chestSS[0];
   static readonly SS_TRAPPED_CHEST1  = BlockDataDB.TRAPPED_CHEST._trapped_chestSS[1];
   static readonly SS_TRAPPED_CHEST2  = BlockDataDB.TRAPPED_CHEST._trapped_chestSS[2];
@@ -243,7 +301,9 @@ export class BlockDataDB {
   static readonly SS_TRAPPED_CHEST14 = BlockDataDB.TRAPPED_CHEST._trapped_chestSS[14];
   static readonly SS_TRAPPED_CHEST15 = BlockDataDB.TRAPPED_CHEST._trapped_chestSS[15];
 
+  /** blockData strings for a Chest (27-slot inventory). */
   static readonly CHEST = class {
+    /** Pre-computed blockData strings indexed by signal strength (index 0 = SS 0, index 15 = SS 15). */
     static readonly _chestSS: string[] = [
       `minecraft:chest{CustomName:'{"italic":false,"text":"0"}'}`,
       `minecraft:chest{CustomName:'{"italic":false,"text":"1"}',Items:[{Count:1b,Slot:0b,id:"minecraft:redstone"}]}`,
@@ -262,9 +322,15 @@ export class BlockDataDB {
       `minecraft:chest{CustomName:'{"italic":false,"text":"14"}',Items:[{Count:64b,Slot:0b,id:"minecraft:redstone"},{Count:64b,Slot:1b,id:"minecraft:redstone"},{Count:64b,Slot:2b,id:"minecraft:redstone"},{Count:64b,Slot:3b,id:"minecraft:redstone"},{Count:64b,Slot:4b,id:"minecraft:redstone"},{Count:64b,Slot:5b,id:"minecraft:redstone"},{Count:64b,Slot:6b,id:"minecraft:redstone"},{Count:64b,Slot:7b,id:"minecraft:redstone"},{Count:64b,Slot:8b,id:"minecraft:redstone"},{Count:64b,Slot:9b,id:"minecraft:redstone"},{Count:64b,Slot:10b,id:"minecraft:redstone"},{Count:64b,Slot:11b,id:"minecraft:redstone"},{Count:64b,Slot:12b,id:"minecraft:redstone"},{Count:64b,Slot:13b,id:"minecraft:redstone"},{Count:64b,Slot:14b,id:"minecraft:redstone"},{Count:64b,Slot:15b,id:"minecraft:redstone"},{Count:64b,Slot:16b,id:"minecraft:redstone"},{Count:64b,Slot:17b,id:"minecraft:redstone"},{Count:64b,Slot:18b,id:"minecraft:redstone"},{Count:64b,Slot:19b,id:"minecraft:redstone"},{Count:64b,Slot:20b,id:"minecraft:redstone"},{Count:64b,Slot:21b,id:"minecraft:redstone"},{Count:64b,Slot:22b,id:"minecraft:redstone"},{Count:64b,Slot:23b,id:"minecraft:redstone"},{Count:64b,Slot:24b,id:"minecraft:redstone"},{Count:5b,Slot:25b,id:"minecraft:redstone"}]}`,
       `minecraft:chest{CustomName:'{"italic":false,"text":"15"}',Items:[{Count:64b,Slot:0b,id:"minecraft:redstone"},{Count:64b,Slot:1b,id:"minecraft:redstone"},{Count:64b,Slot:2b,id:"minecraft:redstone"},{Count:64b,Slot:3b,id:"minecraft:redstone"},{Count:64b,Slot:4b,id:"minecraft:redstone"},{Count:64b,Slot:5b,id:"minecraft:redstone"},{Count:64b,Slot:6b,id:"minecraft:redstone"},{Count:64b,Slot:7b,id:"minecraft:redstone"},{Count:64b,Slot:8b,id:"minecraft:redstone"},{Count:64b,Slot:9b,id:"minecraft:redstone"},{Count:64b,Slot:10b,id:"minecraft:redstone"},{Count:64b,Slot:11b,id:"minecraft:redstone"},{Count:64b,Slot:12b,id:"minecraft:redstone"},{Count:64b,Slot:13b,id:"minecraft:redstone"},{Count:64b,Slot:14b,id:"minecraft:redstone"},{Count:64b,Slot:15b,id:"minecraft:redstone"},{Count:64b,Slot:16b,id:"minecraft:redstone"},{Count:64b,Slot:17b,id:"minecraft:redstone"},{Count:64b,Slot:18b,id:"minecraft:redstone"},{Count:64b,Slot:19b,id:"minecraft:redstone"},{Count:64b,Slot:20b,id:"minecraft:redstone"},{Count:64b,Slot:21b,id:"minecraft:redstone"},{Count:64b,Slot:22b,id:"minecraft:redstone"},{Count:64b,Slot:23b,id:"minecraft:redstone"},{Count:64b,Slot:24b,id:"minecraft:redstone"},{Count:64b,Slot:25b,id:"minecraft:redstone"},{Count:64b,Slot:26b,id:"minecraft:redstone"},{Count:0b,Slot:27b,id:"minecraft:redstone"}]}`,
     ];
+    /**
+     * Returns the blockData string for a Chest that outputs the given comparator signal strength.
+     * @param ss - Signal strength (integer 0–15).
+     * @returns The blockData string for the Chest at that signal strength.
+     */
     static fromSS(ss: number): string { return BlockDataDB.CHEST._chestSS[ss]; }
   };
 
+  /** Flat shortcut fields for Chest signal strengths 0–15. */
   static readonly SS_CHEST0  = BlockDataDB.CHEST._chestSS[0];
   static readonly SS_CHEST1  = BlockDataDB.CHEST._chestSS[1];
   static readonly SS_CHEST2  = BlockDataDB.CHEST._chestSS[2];
@@ -282,7 +348,9 @@ export class BlockDataDB {
   static readonly SS_CHEST14 = BlockDataDB.CHEST._chestSS[14];
   static readonly SS_CHEST15 = BlockDataDB.CHEST._chestSS[15];
 
+  /** blockData strings for a Shulker Box (27-slot inventory). */
   static readonly SHULKER_BOX = class {
+    /** Pre-computed blockData strings indexed by signal strength (index 0 = SS 0, index 15 = SS 15). */
     static readonly _shulker_boxSS: string[] = [
       `minecraft:shulker_box{CustomName:'{"italic":false,"text":"0"}'}`,
       `minecraft:shulker_box{CustomName:'{"italic":false,"text":"1"}',Items:[{Count:1b,Slot:0b,id:"minecraft:redstone"}]}`,
@@ -301,9 +369,15 @@ export class BlockDataDB {
       `minecraft:shulker_box{CustomName:'{"italic":false,"text":"14"}',Items:[{Count:64b,Slot:0b,id:"minecraft:redstone"},{Count:64b,Slot:1b,id:"minecraft:redstone"},{Count:64b,Slot:2b,id:"minecraft:redstone"},{Count:64b,Slot:3b,id:"minecraft:redstone"},{Count:64b,Slot:4b,id:"minecraft:redstone"},{Count:64b,Slot:5b,id:"minecraft:redstone"},{Count:64b,Slot:6b,id:"minecraft:redstone"},{Count:64b,Slot:7b,id:"minecraft:redstone"},{Count:64b,Slot:8b,id:"minecraft:redstone"},{Count:64b,Slot:9b,id:"minecraft:redstone"},{Count:64b,Slot:10b,id:"minecraft:redstone"},{Count:64b,Slot:11b,id:"minecraft:redstone"},{Count:64b,Slot:12b,id:"minecraft:redstone"},{Count:64b,Slot:13b,id:"minecraft:redstone"},{Count:64b,Slot:14b,id:"minecraft:redstone"},{Count:64b,Slot:15b,id:"minecraft:redstone"},{Count:64b,Slot:16b,id:"minecraft:redstone"},{Count:64b,Slot:17b,id:"minecraft:redstone"},{Count:64b,Slot:18b,id:"minecraft:redstone"},{Count:64b,Slot:19b,id:"minecraft:redstone"},{Count:64b,Slot:20b,id:"minecraft:redstone"},{Count:64b,Slot:21b,id:"minecraft:redstone"},{Count:64b,Slot:22b,id:"minecraft:redstone"},{Count:64b,Slot:23b,id:"minecraft:redstone"},{Count:64b,Slot:24b,id:"minecraft:redstone"},{Count:5b,Slot:25b,id:"minecraft:redstone"}]}`,
       `minecraft:shulker_box{CustomName:'{"italic":false,"text":"15"}',Items:[{Count:64b,Slot:0b,id:"minecraft:redstone"},{Count:64b,Slot:1b,id:"minecraft:redstone"},{Count:64b,Slot:2b,id:"minecraft:redstone"},{Count:64b,Slot:3b,id:"minecraft:redstone"},{Count:64b,Slot:4b,id:"minecraft:redstone"},{Count:64b,Slot:5b,id:"minecraft:redstone"},{Count:64b,Slot:6b,id:"minecraft:redstone"},{Count:64b,Slot:7b,id:"minecraft:redstone"},{Count:64b,Slot:8b,id:"minecraft:redstone"},{Count:64b,Slot:9b,id:"minecraft:redstone"},{Count:64b,Slot:10b,id:"minecraft:redstone"},{Count:64b,Slot:11b,id:"minecraft:redstone"},{Count:64b,Slot:12b,id:"minecraft:redstone"},{Count:64b,Slot:13b,id:"minecraft:redstone"},{Count:64b,Slot:14b,id:"minecraft:redstone"},{Count:64b,Slot:15b,id:"minecraft:redstone"},{Count:64b,Slot:16b,id:"minecraft:redstone"},{Count:64b,Slot:17b,id:"minecraft:redstone"},{Count:64b,Slot:18b,id:"minecraft:redstone"},{Count:64b,Slot:19b,id:"minecraft:redstone"},{Count:64b,Slot:20b,id:"minecraft:redstone"},{Count:64b,Slot:21b,id:"minecraft:redstone"},{Count:64b,Slot:22b,id:"minecraft:redstone"},{Count:64b,Slot:23b,id:"minecraft:redstone"},{Count:64b,Slot:24b,id:"minecraft:redstone"},{Count:64b,Slot:25b,id:"minecraft:redstone"},{Count:64b,Slot:26b,id:"minecraft:redstone"},{Count:0b,Slot:27b,id:"minecraft:redstone"}]}`,
     ];
+    /**
+     * Returns the blockData string for a Shulker Box that outputs the given comparator signal strength.
+     * @param ss - Signal strength (integer 0–15).
+     * @returns The blockData string for the Shulker Box at that signal strength.
+     */
     static fromSS(ss: number): string { return BlockDataDB.SHULKER_BOX._shulker_boxSS[ss]; }
   };
 
+  /** Flat shortcut fields for Shulker Box signal strengths 0–15. */
   static readonly SS_SHULKER_BOX0  = BlockDataDB.SHULKER_BOX._shulker_boxSS[0];
   static readonly SS_SHULKER_BOX1  = BlockDataDB.SHULKER_BOX._shulker_boxSS[1];
   static readonly SS_SHULKER_BOX2  = BlockDataDB.SHULKER_BOX._shulker_boxSS[2];
@@ -321,7 +395,9 @@ export class BlockDataDB {
   static readonly SS_SHULKER_BOX14 = BlockDataDB.SHULKER_BOX._shulker_boxSS[14];
   static readonly SS_SHULKER_BOX15 = BlockDataDB.SHULKER_BOX._shulker_boxSS[15];
 
+  /** blockData strings for a Smoker (3-slot inventory: input, fuel, output). */
   static readonly SMOKER = class {
+    /** Pre-computed blockData strings indexed by signal strength (index 0 = SS 0, index 15 = SS 15). */
     static readonly _smokerSS: string[] = [
       `minecraft:smoker{CustomName:'{"italic":false,"text":"0"}'}`,
       `minecraft:smoker{CustomName:'{"italic":false,"text":"1"}',Items:[{Count:1b,Slot:0b,id:"minecraft:redstone"}]}`,
@@ -340,9 +416,15 @@ export class BlockDataDB {
       `minecraft:smoker{CustomName:'{"italic":false,"text":"14"}',Items:[{Count:64b,Slot:0b,id:"minecraft:redstone"},{Count:64b,Slot:1b,id:"minecraft:redstone"},{Count:51b,Slot:2b,id:"minecraft:redstone"}]}`,
       `minecraft:smoker{CustomName:'{"italic":false,"text":"15"}',Items:[{Count:64b,Slot:0b,id:"minecraft:redstone"},{Count:64b,Slot:1b,id:"minecraft:redstone"},{Count:64b,Slot:2b,id:"minecraft:redstone"},{Count:0b,Slot:3b,id:"minecraft:redstone"}]}`,
     ];
+    /**
+     * Returns the blockData string for a Smoker that outputs the given comparator signal strength.
+     * @param ss - Signal strength (integer 0–15).
+     * @returns The blockData string for the Smoker at that signal strength.
+     */
     static fromSS(ss: number): string { return BlockDataDB.SMOKER._smokerSS[ss]; }
   };
 
+  /** Flat shortcut fields for Smoker signal strengths 0–15. */
   static readonly SS_SMOKER0  = BlockDataDB.SMOKER._smokerSS[0];
   static readonly SS_SMOKER1  = BlockDataDB.SMOKER._smokerSS[1];
   static readonly SS_SMOKER2  = BlockDataDB.SMOKER._smokerSS[2];
@@ -360,7 +442,9 @@ export class BlockDataDB {
   static readonly SS_SMOKER14 = BlockDataDB.SMOKER._smokerSS[14];
   static readonly SS_SMOKER15 = BlockDataDB.SMOKER._smokerSS[15];
 
+  /** blockData strings for a Blast Furnace (3-slot inventory: input, fuel, output). */
   static readonly BLAST_FURNACE = class {
+    /** Pre-computed blockData strings indexed by signal strength (index 0 = SS 0, index 15 = SS 15). */
     static readonly _blast_furnaceSS: string[] = [
       `minecraft:blast_furnace{CustomName:'{"italic":false,"text":"0"}'}`,
       `minecraft:blast_furnace{CustomName:'{"italic":false,"text":"1"}',Items:[{Count:1b,Slot:0b,id:"minecraft:redstone"}]}`,
@@ -379,9 +463,15 @@ export class BlockDataDB {
       `minecraft:blast_furnace{CustomName:'{"italic":false,"text":"14"}',Items:[{Count:64b,Slot:0b,id:"minecraft:redstone"},{Count:64b,Slot:1b,id:"minecraft:redstone"},{Count:51b,Slot:2b,id:"minecraft:redstone"}]}`,
       `minecraft:blast_furnace{CustomName:'{"italic":false,"text":"15"}',Items:[{Count:64b,Slot:0b,id:"minecraft:redstone"},{Count:64b,Slot:1b,id:"minecraft:redstone"},{Count:64b,Slot:2b,id:"minecraft:redstone"},{Count:0b,Slot:3b,id:"minecraft:redstone"}]}`,
     ];
+    /**
+     * Returns the blockData string for a Blast Furnace that outputs the given comparator signal strength.
+     * @param ss - Signal strength (integer 0–15).
+     * @returns The blockData string for the Blast Furnace at that signal strength.
+     */
     static fromSS(ss: number): string { return BlockDataDB.BLAST_FURNACE._blast_furnaceSS[ss]; }
   };
 
+  /** Flat shortcut fields for Blast Furnace signal strengths 0–15. */
   static readonly SS_BLAST_FURNACE0  = BlockDataDB.BLAST_FURNACE._blast_furnaceSS[0];
   static readonly SS_BLAST_FURNACE1  = BlockDataDB.BLAST_FURNACE._blast_furnaceSS[1];
   static readonly SS_BLAST_FURNACE2  = BlockDataDB.BLAST_FURNACE._blast_furnaceSS[2];
