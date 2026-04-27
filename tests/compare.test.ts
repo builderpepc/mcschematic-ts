@@ -22,6 +22,13 @@ function saveToBuffer(schem: MCSchematic, version = Version.JE_1_21_1): any {
   return data;
 }
 
+function parseBuffer(buf: Buffer): any {
+  const raw = zlib.gunzipSync(buf);
+  const parsed = nbt.parseUncompressed(raw);
+  const root = parsed.value as any;
+  return 'Schematic' in root ? root['Schematic'].value : root;
+}
+
 function comparePalettes(pyData: any, tsData: any): void {
   const pyPalette: Record<string, number> = {};
   for (const [k, v] of Object.entries(pyData['Palette'].value as any)) {
@@ -429,4 +436,37 @@ test('fixture21: BlockDataDB.DISPENSER fromSS', () => {
   const pyBeList = pyData['BlockEntities'].value as any;
   const tsBeList = tsData['BlockEntities'].value as any;
   expect(tsBeList.value.length).toBe(pyBeList.value.length);
+});
+
+test('toBuffer() produces identical NBT to save()', () => {
+  // Build a representative schematic with multiple block types and states.
+  const schem = new MCSchematic();
+  schem.setBlock([0, 0, 0], 'minecraft:stone');
+  schem.setBlock([1, 0, 0], 'minecraft:oak_log[axis=y]');
+  schem.setBlock([0, 1, 0], 'minecraft:oak_stairs[facing=north,half=bottom,shape=straight]');
+  schem.setBlock([1, 1, 0], 'minecraft:chest[facing=west]');
+  schem.setBlock([0, 0, 1], 'minecraft:glass');
+
+  const viaFile   = saveToBuffer(schem);
+  const viaMem    = parseBuffer(schem.toBuffer(Version.JE_1_21_1));
+
+  comparePalettes(viaFile, viaMem);
+  compareBlockData(viaFile, viaMem);
+});
+
+test('toBuffer() → fromBuffer() round-trip preserves all blocks', () => {
+  const original = new MCSchematic();
+  original.setBlock([0, 0, 0], 'minecraft:stone');
+  original.setBlock([1, 0, 0], 'minecraft:oak_log[axis=y]');
+  original.setBlock([0, 1, 0], 'minecraft:oak_stairs[facing=north,half=bottom,shape=straight]');
+  original.setBlock([1, 1, 0], 'minecraft:chest[facing=west]');
+  original.setBlock([0, 0, 1], 'minecraft:glass');
+
+  const restored = MCSchematic.fromBuffer(original.toBuffer(Version.JE_1_21_1));
+
+  const origData = parseBuffer(original.toBuffer(Version.JE_1_21_1));
+  const restData = parseBuffer(restored.toBuffer(Version.JE_1_21_1));
+
+  comparePalettes(origData, restData);
+  compareBlockData(origData, restData);
 });

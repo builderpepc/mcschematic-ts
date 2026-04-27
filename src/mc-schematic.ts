@@ -17,6 +17,8 @@ import { parseSnbt, serializeTag, NbtCompound, NbtTag } from './nbt-utils';
  * - `new MCSchematic()` — start with an empty schematic.
  * - `new MCSchematic(filePath)` — load an existing `.schem` file from disk.
  * - `new MCSchematic(structure)` — wrap a pre-built {@link MCStructure}.
+ * - `MCSchematic.fromBuffer(buffer)` — deserialise from an in-memory gzip Buffer.
+ * - `schematic.toBuffer(version)` — serialise to an in-memory gzip Buffer without touching disk.
  */
 export class MCSchematic {
   private _structure: MCStructure;
@@ -52,17 +54,40 @@ export class MCSchematic {
   }
 
   /**
-   * Deserialises a `.schem` file from disk into this instance's backing structure.
+   * Deserialises an in-memory gzip-compressed `.schem` Buffer into a new {@link MCSchematic}.
    *
-   * Reads the gzip-compressed NBT file, extracts the block palette, decodes the
-   * `BlockData` byte array (either raw single-byte IDs or varint-encoded IDs depending
-   * on palette size), and reconstructs block-entity data. Air is always normalised to
-   * palette ID 0 regardless of the original file ordering.
+   * This is the in-memory equivalent of `new MCSchematic(filePath)` and is useful when
+   * the schematic bytes are already in memory (e.g. received over a network, stored in a
+   * database, or produced by {@link toBuffer}).
+   *
+   * @param buffer - A gzip-compressed Sponge Schematic v2 buffer.
+   * @returns A new {@link MCSchematic} instance populated from the buffer.
+   */
+  static fromBuffer(buffer: Buffer): MCSchematic {
+    const schem = new MCSchematic();
+    schem._initFromBuffer(buffer);
+    return schem;
+  }
+
+  /**
+   * Deserialises a `.schem` file from disk into this instance's backing structure.
    *
    * @param filePath - Absolute or relative path to a valid `.schem` file.
    */
   private _initFromFile(filePath: string): void {
-    const compressed = fs.readFileSync(filePath);
+    this._initFromBuffer(fs.readFileSync(filePath));
+  }
+
+  /**
+   * Deserialises a gzip-compressed `.schem` Buffer into this instance's backing structure.
+   *
+   * Extracts the block palette, decodes the `BlockData` byte array (either raw single-byte
+   * IDs or varint-encoded IDs depending on palette size), and reconstructs block-entity
+   * data. Air is always normalised to palette ID 0 regardless of the original file ordering.
+   *
+   * @param compressed - A gzip-compressed Sponge Schematic v2 buffer.
+   */
+  private _initFromBuffer(compressed: Buffer): void {
     const raw = zlib.gunzipSync(compressed);
 
     const parsed = nbt.parseUncompressed(raw);
@@ -237,87 +262,30 @@ export class MCSchematic {
     version: Version,
     fastSaving = false,
   ): void {
-    const schemBounds = this._structure.getBounds();
-    const schemDims = MCStructure.getStructureDimensions(schemBounds);
-    const schemOffset = schemBounds[0];
-
-    const cleanPalette = this._structure.getBlockPalette();
-    const encodedBlockStates = this._getEncodedBlockStates(
-      cleanPalette.size, schemDims, schemOffset, fastSaving,
-    );
-
-    const blockEntitiesCompounds = Array.from(this._structure.getBlockEntities()).map(
-      ([key, beStr]) => {
-        const pos = key.split(',').map(Number) as Position;
-        const relPos: Position = [
-          pos[0] - schemOffset[0],
-          pos[1] - schemOffset[1],
-          pos[2] - schemOffset[2],
-        ];
-        return this._blockEntityStringToSchemCompound(relPos, beStr);
-      },
-    );
-
-    // Build palette NBT
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const paletteNbt: Record<string, any> = {};
-    for (const [blockState, id] of cleanPalette) {
-      paletteNbt[blockState] = { type: 'int', value: id };
-    }
-
-    // Build block entities NBT
-    // prismarine-nbt list of compounds: value.value is array of Records (not wrapped tags)
-    const beNbtList = {
-      type: 'list',
-      value: {
-        type: 'compound',
-        value: blockEntitiesCompounds,
-      },
-    };
-
-    const schematicNbt = {
-      type: 'compound',
-      value: {
-        Version: { type: 'int', value: 2 },
-        DataVersion: { type: 'int', value: version },
-        Metadata: {
-          type: 'compound',
-          value: {
-            WEOffsetX: { type: 'int', value: schemOffset[0] },
-            WEOffsetY: { type: 'int', value: schemOffset[1] },
-            WEOffsetZ: { type: 'int', value: schemOffset[2] },
-            MCSchematicMetadata: {
-              type: 'compound',
-              value: {
-                Generated: {
-                  type: 'string',
-                  value: "Generated with love using Sloimay's MCSchematic Python Library, itself dependant on Valentin Berlier's nbtlib library.",
-                },
-              },
-            },
-          },
-        },
-        Height: { type: 'short', value: schemDims[1] },
-        Length: { type: 'short', value: schemDims[2] },
-        Width:  { type: 'short', value: schemDims[0] },
-        PaletteMax: { type: 'int', value: cleanPalette.size },
-        Palette: { type: 'compound', value: paletteNbt },
-        BlockData: { type: 'byteArray', value: Array.from(encodedBlockStates) },
-        BlockEntities: beNbtList,
-      },
-    };
-
-    const rawNbt = nbt.writeUncompressed(
-      { type: 'compound', name: 'Schematic', value: { Schematic: schematicNbt } } as unknown as nbt.NBT,
-    );
-    const compressed = zlib.gzipSync(rawNbt);
-
+    const compressed = this._buildBuffer(version, fastSaving);
     const outPath =
       outputFolderPath === ''
         ? `${schemName}.schem`
         : path.join(outputFolderPath, `${schemName}.schem`);
-
     fs.writeFileSync(outPath, compressed);
+  }
+
+  /**
+   * Serialises the schematic to an in-memory gzip-compressed Buffer without writing
+   * any files to disk.
+   *
+   * The buffer format is identical to what {@link save} writes: Sponge Schematic v2,
+   * gzip-compressed NBT with a `Schematic` root tag. It can be passed directly to
+   * {@link fromBuffer} to round-trip the schematic entirely in memory.
+   *
+   * @param version - Minecraft data version integer (see {@link Version}) written to the
+   *   `DataVersion` NBT tag, used by WorldEdit to interpret block states correctly.
+   * @param fastSaving - When `true`, uses fixed-width varint encoding for palettes larger
+   *   than 128 entries. Defaults to `false` (minimal-width varint, smallest output).
+   * @returns A gzip-compressed Sponge Schematic v2 buffer.
+   */
+  toBuffer(version: Version, fastSaving = false): Buffer {
+    return this._buildBuffer(version, fastSaving);
   }
 
   /** Returns the underlying {@link MCStructure} that backs this schematic. */
@@ -406,6 +374,89 @@ export class MCSchematic {
   }
 
   // --- Private ---
+
+  /**
+   * Builds and returns the gzip-compressed Sponge Schematic v2 buffer for this schematic.
+   * Shared by {@link save} (which writes it to disk) and {@link toBuffer} (which returns it).
+   *
+   * @param version - Minecraft data version integer written to the `DataVersion` NBT tag.
+   * @param fastSaving - Selects fixed-width varint encoding when `true`.
+   * @returns A gzip-compressed buffer ready to be written to a `.schem` file or kept in memory.
+   */
+  private _buildBuffer(version: Version, fastSaving: boolean): Buffer {
+    const schemBounds = this._structure.getBounds();
+    const schemDims = MCStructure.getStructureDimensions(schemBounds);
+    const schemOffset = schemBounds[0];
+
+    const cleanPalette = this._structure.getBlockPalette();
+    const encodedBlockStates = this._getEncodedBlockStates(
+      cleanPalette.size, schemDims, schemOffset, fastSaving,
+    );
+
+    const blockEntitiesCompounds = Array.from(this._structure.getBlockEntities()).map(
+      ([key, beStr]) => {
+        const pos = key.split(',').map(Number) as Position;
+        const relPos: Position = [
+          pos[0] - schemOffset[0],
+          pos[1] - schemOffset[1],
+          pos[2] - schemOffset[2],
+        ];
+        return this._blockEntityStringToSchemCompound(relPos, beStr);
+      },
+    );
+
+    // Build palette NBT
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const paletteNbt: Record<string, any> = {};
+    for (const [blockState, id] of cleanPalette) {
+      paletteNbt[blockState] = { type: 'int', value: id };
+    }
+
+    const beNbtList = {
+      type: 'list',
+      value: {
+        type: 'compound',
+        value: blockEntitiesCompounds,
+      },
+    };
+
+    const schematicNbt = {
+      type: 'compound',
+      value: {
+        Version: { type: 'int', value: 2 },
+        DataVersion: { type: 'int', value: version },
+        Metadata: {
+          type: 'compound',
+          value: {
+            WEOffsetX: { type: 'int', value: schemOffset[0] },
+            WEOffsetY: { type: 'int', value: schemOffset[1] },
+            WEOffsetZ: { type: 'int', value: schemOffset[2] },
+            MCSchematicMetadata: {
+              type: 'compound',
+              value: {
+                Generated: {
+                  type: 'string',
+                  value: "Generated with love using Sloimay's MCSchematic Python Library, itself dependant on Valentin Berlier's nbtlib library.",
+                },
+              },
+            },
+          },
+        },
+        Height: { type: 'short', value: schemDims[1] },
+        Length: { type: 'short', value: schemDims[2] },
+        Width:  { type: 'short', value: schemDims[0] },
+        PaletteMax: { type: 'int', value: cleanPalette.size },
+        Palette: { type: 'compound', value: paletteNbt },
+        BlockData: { type: 'byteArray', value: Array.from(encodedBlockStates) },
+        BlockEntities: beNbtList,
+      },
+    };
+
+    const rawNbt = nbt.writeUncompressed(
+      { type: 'compound', name: 'Schematic', value: { Schematic: schematicNbt } } as unknown as nbt.NBT,
+    );
+    return zlib.gzipSync(rawNbt);
+  }
 
   /**
    * Converts an internal block-entity data string into the prismarine-nbt compound
